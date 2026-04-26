@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام إدارة الموارد البشرية - المدرسة</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    direction: rtl;
+    background: #f4f6f9;
+    color: #222;
+    min-height: 100vh;
+    padding: 24px 12px;
+  }
+  .app { max-width: 960px; margin: 0 auto; }
+
+  /* HEADER */
+  .hdr {
+    background: #1a5276;
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .hdr h1 { font-size: 20px; font-weight: 600; }
+  .hdr p { font-size: 12px; opacity: .8; margin-top: 3px; }
+
+  /* NAV */
+  .nav {
+    display: flex;
+    background: #eaf0f6;
+    border: 1px solid #c8d6e5;
+    border-top: none;
+    overflow-x: auto;
+  }
+  .nb {
+    flex: 1;
+    min-width: 72px;
+    padding: 10px 6px;
+    font-size: 12px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid #c8d6e5;
+    cursor: pointer;
+    color: #555;
+    font-weight: 400;
+    transition: all .15s;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .nb:first-child { border-left: none; }
+  .nb.on { background: #fff; color: #1a5276; font-weight: 600; border-bottom: 2px solid #1a5276; }
+  .nb:hover:not(.on) { background: #dce8f3; }
+
+  /* PAGES */
+  .pg {
+    display: none;
+    padding: 20px;
+    border: 1px solid #c8d6e5;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    background: #fff;
+  }
+  .pg.on { display: block; }
+
+  /* SECTION TITLE */
+  .sec {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a3a52;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #d0e4f0;
+  }
+
+  /* GRID */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+
+  /* FORM FIELDS */
+  .fld { display: flex; flex-direction: column; gap: 5px; }
+  .fld label { font-size: 12px; color: #555; font-weight: 500; }
+  .fld input, .fld select, .fld textarea {
+    padding: 9px 11px;
+    border: 1px solid #c5d5e4;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #f8fbfe;
+    color: #222;
+    font-family: inherit;
+    transition: border-color .15s;
+  }
+  .fld input:focus, .fld select:focus, .fld textarea:focus {
+    outline: none;
+    border-color: #2980b9;
+    background: #fff;
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: 1px solid #aaa;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .bp { background: #1a5276; color: #fff; border-color: #1a5276; }
+  .bp:hover { background: #2980b9; border-color: #2980b9; }
+  .bs { background: #27ae60; color: #fff; border-color: #27ae60; }
+  .bs:hover { background: #1e8449; }
+  .bw { background: #e67e22; color: #fff; border-color: #e67e22; }
+  .bw:hover { background: #ca6f1e; }
+  .bd { background: #c0392b; color: #fff; border-color: #c0392b; font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+  .bd:hover { background: #a93226; }
+
+  /* SPACING */
+  .mt { margin-top: 14px; }
+  .mt8 { margin-top: 8px; }
+
+  /* FLEX */
+  .fl { display: flex; gap: 8px; align-items: center; }
+  .fle { justify-content: flex-end; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #eaf0f6;
+    padding: 10px 8px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 12px;
+    color: #444;
+    border-bottom: 2px solid #c8d6e5;
+  }
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #e8eff5;
+    color: #222;
+    vertical-align: middle;
+  }
+  tr:hover td { background: #f4f9fd; }
+  tfoot td { background: #eaf0f6; font-weight: 600; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .be { background: #d6eaf8; color: #154360; }
+  .bt { background: #d5f5e3; color: #1a5632; }
+  .bh { background: #fdebd0; color: #784212; }
+  .ba { background: #fadbd8; color: #922b21; }
+  .bg2 { background: #ebf5fb; color: #1a5276; }
+  .bp2 { background: #e8f8f5; color: #0e6655; }
+  .baw { background: #fef9e7; color: #7d6608; }
+
+  /* STAT CARDS */
+  .stat {
+    background: #eef5fb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid #c8d6e5;
+  }
+  .stat .lbl { font-size: 12px; color: #555; margin-bottom: 5px; font-weight: 500; }
+  .stat .val { font-size: 22px; font-weight: 700; color: #1a3a52; }
+  .stat .sub { font-size: 11px; color: #777; margin-top: 3px; }
+
+  /* SUMMARY CARD */
+  .sc {
+    background: #f4f8fc;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid #d0e4f0;
+  }
+
+  /* CALC ROWS */
+  .cr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid #e8eff5;
+    font-size: 13px;
+    color: #333;
+  }
+  .cr:last-child { border-bottom: none; }
+  .cr.tot { font-weight: 700; font-size: 14px; padding-top: 10px; color: #1a3a52; }
+  .cr.red { color: #c0392b; }
+  .cr.grn { color: #27ae60; }
+  .cr.org { color: #e67e22; }
+
+  /* ALERTS */
+  .alrt { padding: 11px 15px; border-radius: 8px; font-size: 12px; margin-top: 10px; line-height: 1.6; }
+  .ai { background: #d6eaf8; color: #154360; border: 1px solid #aed6f1; }
+  .as { background: #d5f5e3; color: #1a5632; border: 1px solid #a9dfbf; }
+  .ar { background: #fadbd8; color: #922b21; border: 1px solid #f1948a; }
+  .aw { background: #fef9e7; color: #7d6608; border: 1px solid #f9e79f; }
+
+  /* NO DATA */
+  .nd { text-align: center; padding: 28px; color: #888; font-size: 13px; }
+
+  /* TABS INNER */
+  .ti { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tib {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #c8d6e5;
+    background: #eaf0f6;
+    color: #555;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all .15s;
+  }
+  .tib.on { background: #1a5276; color: #fff; border-color: #1a5276; }
+
+  /* PROGRESS */
+  .prog { width: 100%; height: 7px; background: #dce8f3; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 4px; background: #1a5276; transition: width .3s; }
+  .prog-fill.org { background: #e67e22; }
+
+  /* SMALL TEXT */
+  small { font-size: 11px; color: #666; display: block; margin-top: 2px; }
+
+  @media (max-width: 600px) {
+    .g2, .g3, .g4 { grid-template-columns: 1fr; }
+    .nav { flex-wrap: wrap; }
+    .nb { flex: unset; min-width: 80px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div>
+      <h1>نظام إدارة الموارد البشرية - المدرسة</h1>
+      <p>رواتب | تأمينات | ضرائب | مكافآت | غيابات | سلف</p>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nb on" onclick="go('dash',this)">الرئيسية</button>
+    <button class="nb" onclick="go('emp',this)">الموظفون</button>
+    <button class="nb" onclick="go('add',this)">إضافة موظف</button>
+    <button class="nb" onclick="go('pay',this)">الرواتب</button>
+    <button class="nb" onclick="go('abs',this)">الغيابات</button>
+    <button class="nb" onclick="go('loan',this)">السلف</button>
+    <button class="nb" onclick="go('bon',this)">المكافآت</button>
+    <button class="nb" onclick="go('rep',this)">التقارير</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="pg-dash" class="pg on">
+    <div class="g4" id="dash-stats"></div>
+    <div class="sec">ملخص الشهر الحالي</div>
+    <table>
+      <thead><tr><th>الموظف</th><th>النوع</th><th>الإجمالي</th><th>غيابات</th><th>سلف</th><th>تأمين</th><th>ضريبة</th><th>الصافي</th></tr></thead>
+      <tbody id="dash-body"></tbody>
+    </table>
+  </div>
+
+  <!-- EMPLOYEES -->
+  <div id="pg-emp" class="pg">
+    <div class="fl" style="justify-content:space-between;margin-bottom:14px">
+      <div class="sec" style="margin:0;border:none">قائمة الموظفين</div>
+      <select id="flt" onchange="renderEmp()" style="padding:7px 11px;border:1px solid #c5d5e4;border-radius:8px;background:#f8fbfe;color:#222;font-size:13px;font-family:inherit">
+        <option value="all">الكل</option>
+        <option value="employee">موظف</option>
+        <option value="teacher">مدرس</option>
+        <option value="hourly">بالحصة</option>
+      </select>
+    </div>
+    <table>
+      <thead><tr><th>الموظف</th><th>النوع</th><th>الراتب</th><th>غياب/شهر</th><th>سلف متبقية</th><th>الصافي</th><th></th></tr></thead>
+      <tbody id="emp-body"></tbody>
+    </table>
+  </div>
+
+  <!-- ADD EMPLOYEE -->
+  <div id="pg-add" class="pg">
+    <div class="sec">إضافة موظف / مدرس جديد</div>
+    <div class="g2">
+      <div class="fld"><label>الاسم الكامل</label><input id="an" placeholder="اسم الموظف"></div>
+      <div class="fld"><label>الرقم الوظيفي</label><input id="ai" placeholder="EMP-001"></div>
+    </div>
+    <div class="g2 mt">
+      <div class="fld">
+        <label>نوع الموظف</label>
+        <select id="at" onchange="toggleAdd()">
+          <option value="employee">موظف إداري</option>
+          <option value="teacher">مدرس (راتب ثابت)</option>
+          <option value="hourly">مدرس بالحصة</option>
+        </select>
+      </div>
+      <div class="fld"><label>القسم / المادة</label><input id="ad" placeholder="الرياضيات، إدارة..."></div>
+    </div>
+    <div class="g2 mt">
+      <div class="fld"><label id="asl">الراتب الأساسي (جنيه)</label><input type="number" id="as2" placeholder="0" min="0"></div>
+      <div class="fld" id="ahf" style="display:none"><label>عدد الحصص الشهرية</label><input type="number" id="ah" placeholder="0" min="0"></div>
+    </div>
+    <div class="g3 mt">
+      <div class="fld"><label>بدل السكن</label><input type="number" id="aho" placeholder="0" min="0"></div>
+      <div class="fld"><label>بدل المواصلات</label><input type="number" id="atr" placeholder="0" min="0"></div>
+      <div class="fld"><label>بدلات أخرى</label><input type="number" id="aot" placeholder="0" min="0"></div>
+    </div>
+    <div class="g2 mt">
+      <div class="fld"><label>تاريخ التعيين</label><input type="date" id="adt"></div>
+      <div class="fld"><label>أيام العمل الشهرية</label><input type="number" id="awdays" placeholder="26" min="1" max="31" value="26"></div>
+    </div>
+    <div class="fl fle mt"><button class="btn bp" onclick="addEmp()">إضافة الموظف</button></div>
+    <div id="add-msg"></div>
+  </div>
+
+  <!-- PAYROLL -->
+  <div id="pg-pay" class="pg">
+    <div class="sec">حساب الرواتب والاستقطاعات</div>
+    <div class="ti">
+      <button class="tib on" onclick="swPay('one',this)">موظف واحد</button>
+      <button class="tib" onclick="swPay('all',this)">كشف رواتب كامل</button>
+    </div>
+    <div id="pay-one">
+      <div class="g2">
+        <div class="fld"><label>اختر الموظف</label><select id="psel" onchange="calcPay()"><option value="">-- اختر --</option></select></div>
+        <div class="fld" id="phr-f" style="display:none"><label>حصص فعلية هذا الشهر</label><input type="number" id="phr" placeholder="0" min="0" oninput="calcPay()"></div>
+      </div>
+      <div id="pay-res"></div>
+    </div>
+    <div id="pay-all" style="display:none">
+      <table>
+        <thead><tr><th>الموظف</th><th>إجمالي</th><th>غيابات</th><th>سلف</th><th>تأمين</th><th>ضريبة</th><th>مكافآت</th><th>صافي</th></tr></thead>
+        <tbody id="pay-all-body"></tbody>
+        <tfoot id="pay-all-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ABSENCES -->
+  <div id="pg-abs" class="pg">
+    <div class="sec">تسجيل الغيابات والخصومات</div>
+    <div class="g3">
+      <div class="fld"><label>اختر الموظف</label><select id="abemp"><option value="">-- اختر --</option></select></div>
+      <div class="fld">
+        <label>نوع الغياب</label>
+        <select id="abtype">
+          <option value="absent">غياب بدون إذن</option>
+          <option value="excuse">إجازة اعتذار (مخصومة)</option>
+          <option value="sick">إجازة مرضية (25%)</option>
+          <option value="annual">إجازة سنوية (مدفوعة)</option>
+          <option value="late">تأخر متكرر (50%)</option>
+        </select>
+      </div>
+      <div class="fld"><label>عدد الأيام</label><input type="number" id="abdays" placeholder="1" min="1" max="30"></div>
+    </div>
+    <div class="g2 mt">
+      <div class="fld"><label>التاريخ</label><input type="date" id="abdate"></div>
+      <div class="fld"><label>ملاحظات</label><input id="abnote" placeholder="سبب الغياب..."></div>
+    </div>
+    <div class="fl fle mt"><button class="btn bs" onclick="addAbs()">تسجيل الغياب</button></div>
+    <div id="abs-msg"></div>
+    <div class="alrt aw mt">
+      <strong>آلية حساب الغياب:</strong><br>
+      غياب / اعتذار: خصم يومي كامل &nbsp;|&nbsp; مرضية: خصم 25% &nbsp;|&nbsp; سنوية: بدون خصم &nbsp;|&nbsp; تأخر: خصم 50% يوم
+    </div>
+    <div class="sec mt">سجل الغيابات</div>
+    <table>
+      <thead><tr><th>الموظف</th><th>النوع</th><th>الأيام</th><th>الخصم</th><th>التاريخ</th><th>ملاحظات</th><th></th></tr></thead>
+      <tbody id="abs-table"></tbody>
+    </table>
+  </div>
+
+  <!-- LOANS -->
+  <div id="pg-loan" class="pg">
+    <div class="sec">إدارة السلف</div>
+    <div class="ti">
+      <button class="tib on" onclick="swLoan('add',this)">منح سلفة</button>
+      <button class="tib" onclick="swLoan('list',this)">متابعة السلف</button>
+    </div>
+    <div id="loan-add-sec">
+      <div class="g2">
+        <div class="fld"><label>اختر الموظف</label><select id="lnemp"><option value="">-- اختر --</option></select></div>
+        <div class="fld"><label>قيمة السلفة (جنيه)</label><input type="number" id="lnamt" placeholder="0" min="0"></div>
+      </div>
+      <div class="g3 mt">
+        <div class="fld"><label>عدد أقساط السداد (شهر)</label><input type="number" id="lnmos" placeholder="3" min="1" max="24"></div>
+        <div class="fld"><label>تاريخ منح السلفة</label><input type="date" id="lndate"></div>
+        <div class="fld"><label>سبب السلفة</label><input id="lnnote" placeholder="مثال: ظروف طارئة"></div>
+      </div>
+      <div class="fl fle mt"><button class="btn bw" onclick="addLoan()">منح السلفة</button></div>
+      <div id="loan-msg"></div>
+    </div>
+    <div id="loan-list-sec" style="display:none">
+      <div class="fld" style="max-width:240px;margin-bottom:14px">
+        <label>تصفية حسب الموظف</label>
+        <select id="loan-filter" onchange="renderLoanList()"><option value="all">الكل</option></select>
+      </div>
+      <table>
+        <thead><tr><th>الموظف</th><th>إجمالي السلفة</th><th>المسدد</th><th>المتبقي</th><th>القسط الشهري</th><th>الحالة</th><th>تفاصيل</th></tr></thead>
+        <tbody id="loan-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BONUSES -->
+  <div id="pg-bon" class="pg">
+    <div class="sec">إدارة المكافآت</div>
+    <div class="g2">
+      <div class="fld"><label>اختر الموظف</label><select id="bnemp"><option value="">-- اختر --</option></select></div>
+      <div class="fld">
+        <label>نوع المكافأة</label>
+        <select id="bntype">
+          <option value="performance">مكافأة أداء</option>
+          <option value="annual">مكافأة سنوية</option>
+          <option value="ramadan">مكافأة رمضان</option>
+          <option value="exceptional">مكافأة استثنائية</option>
+          <option value="month">شهر إضافي</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2 mt">
+      <div class="fld"><label>قيمة المكافأة (جنيه)</label><input type="number" id="bnamt" placeholder="0" min="0"></div>
+      <div class="fld"><label>التاريخ</label><input type="date" id="bndate"></div>
+    </div>
+    <div class="fld mt"><label>ملاحظات</label><input id="bnnote" placeholder="سبب المكافأة..."></div>
+    <div class="fl fle mt"><button class="btn bs" onclick="addBonus()">إضافة المكافأة</button></div>
+    <div id="bon-msg"></div>
+    <div class="sec mt">سجل المكافآت</div>
+    <table>
+      <thead><tr><th>الموظف</th><th>النوع</th><th>القيمة</th><th>التاريخ</th><th>ملاحظات</th><th></th></tr></thead>
+      <tbody id="bon-table"></tbody>
+    </table>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="pg-rep" class="pg">
+    <div class="sec">التقارير والإحصائيات</div>
+    <div class="g4" id="rep-stats"></div>
+    <div class="g2">
+      <div class="sc"><div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#1a3a52">ملخص الاستقطاعات</div><div id="rep-deduct"></div></div>
+      <div class="sc"><div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#1a3a52">توزيع الموظفين</div><div id="rep-dist"></div></div>
+    </div>
+    <div class="sc mt"><div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#1a3a52">السلف النشطة</div><div id="rep-loans"></div></div>
+    <div class="sc mt"><div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#1a3a52">الغيابات هذا الشهر</div><div id="rep-abs"></div></div>
+    <div class="alrt ai mt">
+      <strong>معدلات التأمين (مصر):</strong> حصة الموظف 11% | حصة المدرسة 19% | سقف الوعاء 9,400 ج<br>
+      <strong>شرائح الضريبة:</strong> إعفاء 20,000 ج سنوياً | 2.5% حتى 30k | 10% حتى 45k | 15% حتى 60k | 20% حتى 200k | 22.5% حتى 400k | 25% فوق 400k
+    </div>
+  </div>
+</div>
+
+<script>
+const INS=0.11, EMP_INS=0.19, INS_CAP=9400;
+let emps=[
+  {id:'EMP-001',name:'أحمد محمد علي',type:'employee',dept:'الإدارة',salary:8000,housing:1500,transport:500,other:200,date:'2020-01-01',wdays:26,hours:0},
+  {id:'EMP-002',name:'سارة أحمد حسن',type:'teacher',dept:'الرياضيات',salary:6000,housing:1000,transport:400,other:0,date:'2021-03-15',wdays:26,hours:0},
+  {id:'EMP-003',name:'محمود إبراهيم',type:'hourly',dept:'الفيزياء',salary:150,housing:0,transport:0,other:0,date:'2022-09-01',wdays:26,hours:40},
+  {id:'EMP-004',name:'فاطمة عبدالله',type:'teacher',dept:'اللغة العربية',salary:5500,housing:800,transport:300,other:0,date:'2019-08-01',wdays:26,hours:0},
+];
+let absences=[],loans=[],bonuses=[];
+
+function fmt(n){return Math.round(n).toLocaleString('ar-EG');}
+function today(){return new Date().toISOString().split('T')[0];}
+
+function calcTax(annual){
+  const exempt=20000;let t=Math.max(0,annual-exempt),tax=0;
+  const b=[[15000,0],[15000,.025],[15000,.10],[15000,.15],[140000,.20],[200000,.225],[Infinity,.25]];
+  for(let[lim,r] of b){if(t<=0)break;let c=Math.min(t,lim);tax+=c*r;t-=c;}
+  return tax/12;
+}
+function getGross(e,ah=null){
+  if(e.type==='hourly') return e.salary*(ah!==null?ah:e.hours);
+  return e.salary+(e.housing||0)+(e.transport||0)+(e.other||0);
+}
+function getAbsDed(e){
+  const now=new Date(),m=now.getMonth(),y=now.getFullYear();
+  const daily=getGross(e)/(e.wdays||26);
+  let ded=0;
+  absences.filter(a=>a.empId===e.id).forEach(a=>{
+    const d=new Date(a.date);
+    if(d.getMonth()===m&&d.getFullYear()===y){
+      const days=a.days||1;
+      if(a.type==='absent'||a.type==='excuse') ded+=daily*days;
+      else if(a.type==='sick') ded+=daily*days*.25;
+      else if(a.type==='late') ded+=daily*days*.5;
+    }
+  });
+  return ded;
+}
+function getLoanDed(e){return loans.filter(l=>l.empId===e.id&&l.remaining>0).reduce((s,l)=>s+l.monthly,0);}
+function getEmpBonuses(e){return bonuses.filter(b=>b.empId===e.id).reduce((s,b)=>s+b.amount,0);}
+function fullCalc(e,ah=null){
+  const gross=getGross(e,ah);
+  const absDed=getAbsDed(e);
+  const grossAfterAbs=Math.max(0,gross-absDed);
+  const ins=Math.min(grossAfterAbs,INS_CAP)*INS;
+  const tax=calcTax(grossAfterAbs*12);
+  const loanDed=getLoanDed(e);
+  const bonAmt=getEmpBonuses(e);
+  const net=grossAfterAbs-ins-tax-loanDed+bonAmt;
+  return{gross,absDed,grossAfterAbs,ins,tax,loanDed,bonAmt,net};
+}
+
+function fillSelects(){
+  ['psel','abemp','lnemp','bnemp','loan-filter'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    const cur=s.value;
+    if(id==='loan-filter') s.innerHTML='<option value="all">الكل</option>'+emps.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+    else s.innerHTML='<option value="">-- اختر --</option>'+emps.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+    if(cur) s.value=cur;
+  });
+}
+
+function go(id,el){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  el.classList.add('on');
+  fillSelects();
+  if(id==='dash') renderDash();
+  if(id==='emp') renderEmp();
+  if(id==='abs'){renderAbsTable();document.getElementById('abdate').value=today();}
+  if(id==='loan'){renderLoanList();document.getElementById('lndate').value=today();}
+  if(id==='bon'){renderBonTable();document.getElementById('bndate').value=today();}
+  if(id==='rep') renderRep();
+}
+
+function renderDash(){
+  let tG=0,tN=0,tI=0,tT=0;
+  emps.forEach(e=>{const r=fullCalc(e);tG+=r.gross;tN+=r.net;tI+=r.ins;tT+=r.tax;});
+  const totalLoans=loans.reduce((s,l)=>s+l.remaining,0);
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat"><div class="lbl">عدد الموظفين</div><div class="val">${emps.length}</div><div class="sub">موظف ومدرس</div></div>
+    <div class="stat"><div class="lbl">إجمالي الرواتب</div><div class="val">${fmt(tG)}</div><div class="sub">جنيه / شهر</div></div>
+    <div class="stat"><div class="lbl">صافي الرواتب</div><div class="val">${fmt(tN)}</div><div class="sub">بعد الاستقطاعات</div></div>
+    <div class="stat"><div class="lbl">سلف متبقية</div><div class="val">${fmt(totalLoans)}</div><div class="sub">إجمالي السلف</div></div>
+  `;
+  const tm={employee:['موظف','be'],teacher:['مدرس','bt'],hourly:['بالحصة','bh']};
+  document.getElementById('dash-body').innerHTML=emps.map(e=>{
+    const r=fullCalc(e);
+    return`<tr>
+      <td><strong>${e.name}</strong><small>${e.dept}</small></td>
+      <td><span class="badge ${tm[e.type][1]}">${tm[e.type][0]}</span></td>
+      <td>${fmt(r.gross)}</td>
+      <td style="color:${r.absDed>0?'#c0392b':'#888'}">${r.absDed>0?fmt(r.absDed)+' ج':'—'}</td>
+      <td style="color:${r.loanDed>0?'#e67e22':'#888'}">${r.loanDed>0?fmt(r.loanDed)+' ج':'—'}</td>
+      <td style="color:#c0392b">${fmt(r.ins)}</td>
+      <td style="color:#c0392b">${fmt(r.tax)}</td>
+      <td style="color:#27ae60;font-weight:700">${fmt(r.net)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderEmp(){
+  const f=document.getElementById('flt').value;
+  const list=f==='all'?emps:emps.filter(e=>e.type===f);
+  const tm={employee:['موظف','be'],teacher:['مدرس','bt'],hourly:['بالحصة','bh']};
+  document.getElementById('emp-body').innerHTML=list.length?list.map(e=>{
+    const r=fullCalc(e);
+    const absDays=absences.filter(a=>a.empId===e.id&&new Date(a.date).getMonth()===new Date().getMonth()).reduce((s,a)=>s+(a.days||1),0);
+    const loanBal=loans.filter(l=>l.empId===e.id&&l.remaining>0).reduce((s,l)=>s+l.remaining,0);
+    const sal=e.type==='hourly'?`${fmt(e.salary)} ج/حصة (${e.hours} حصة)`:fmt(e.salary)+' ج';
+    return`<tr>
+      <td><strong>${e.name}</strong><small>${e.id} | ${e.dept}</small></td>
+      <td><span class="badge ${tm[e.type][1]}">${tm[e.type][0]}</span></td>
+      <td>${sal}</td>
+      <td>${absDays?`<span style="color:#c0392b;font-weight:600">${absDays} يوم</span>`:'—'}</td>
+      <td>${loanBal?`<span style="color:#e67e22;font-weight:600">${fmt(loanBal)} ج</span>`:'—'}</td>
+      <td style="color:#27ae60;font-weight:700">${fmt(r.net)} ج</td>
+      <td><button class="bd" onclick="delEmp('${e.id}')">حذف</button></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="7" class="nd">لا يوجد موظفون</td></tr>`;
+}
+
+function delEmp(id){if(confirm('حذف هذا الموظف؟')){emps=emps.filter(e=>e.id!==id);renderEmp();}}
+
+function toggleAdd(){
+  const t=document.getElementById('at').value;
+  document.getElementById('asl').textContent=t==='hourly'?'سعر الحصة (جنيه)':'الراتب الأساسي (جنيه)';
+  document.getElementById('ahf').style.display=t==='hourly'?'block':'none';
+}
+
+function addEmp(){
+  const n=document.getElementById('an').value.trim();
+  const i=document.getElementById('ai').value.trim();
+  const t=document.getElementById('at').value;
+  const d=document.getElementById('ad').value.trim();
+  const s=parseFloat(document.getElementById('as2').value)||0;
+  const h=parseInt(document.getElementById('ah').value)||0;
+  const ho=parseFloat(document.getElementById('aho').value)||0;
+  const tr2=parseFloat(document.getElementById('atr').value)||0;
+  const ot=parseFloat(document.getElementById('aot').value)||0;
+  const dt=document.getElementById('adt').value;
+  const wd=parseInt(document.getElementById('awdays').value)||26;
+  if(!n||!i||!s){showMsg('add-msg','يرجى ملء الاسم والرقم والراتب','ar');return;}
+  emps.push({id:i,name:n,type:t,dept:d,salary:s,housing:ho,transport:tr2,other:ot,date:dt,wdays:wd,hours:h});
+  showMsg('add-msg','تم إضافة الموظف بنجاح','as');
+  ['an','ai','ad','as2','ah','aho','atr','aot','adt'].forEach(x=>document.getElementById(x).value='');
+}
+
+function showMsg(id,txt,cls){
+  const el=document.getElementById(id);
+  el.innerHTML=`<div class="alrt ${cls} mt">${txt}</div>`;
+  setTimeout(()=>el.innerHTML='',2500);
+}
+
+function swPay(tab,el){
+  document.querySelectorAll('#pg-pay .tib').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pay-one').style.display=tab==='one'?'block':'none';
+  document.getElementById('pay-all').style.display=tab==='all'?'block':'none';
+  if(tab==='all') renderAllPay();
+}
+
+function calcPay(){
+  const id=document.getElementById('psel').value;
+  if(!id){document.getElementById('pay-res').innerHTML='';return;}
+  const e=emps.find(x=>x.id===id);
+  const hf=document.getElementById('phr-f');
+  hf.style.display=e.type==='hourly'?'block':'none';
+  const ah=e.type==='hourly'?(parseInt(document.getElementById('phr').value)||e.hours):null;
+  const r=fullCalc(e,ah);
+  const empIns=Math.min(r.grossAfterAbs,INS_CAP)*EMP_INS;
+  document.getElementById('pay-res').innerHTML=`
+    <div class="sc mt">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#1a3a52">${e.name} — تفاصيل الراتب</div>
+      <div class="cr grn"><span>الراتب الأساسي</span><span>${fmt(e.type==='hourly'?e.salary*(ah||0):e.salary)} ج</span></div>
+      ${e.housing?`<div class="cr grn"><span>بدل السكن</span><span>${fmt(e.housing)} ج</span></div>`:''}
+      ${e.transport?`<div class="cr grn"><span>بدل المواصلات</span><span>${fmt(e.transport)} ج</span></div>`:''}
+      ${e.other?`<div class="cr grn"><span>بدلات أخرى</span><span>${fmt(e.other)} ج</span></div>`:''}
+      ${e.type==='hourly'?`<div class="cr"><span>الحصص</span><span>${ah} × ${fmt(e.salary)} ج</span></div>`:''}
+      <div class="cr" style="font-weight:700"><span>الإجمالي</span><span>${fmt(r.gross)} ج</span></div>
+      ${r.absDed>0?`<div class="cr red"><span>خصم الغيابات</span><span>- ${fmt(r.absDed)} ج</span></div>`:''}
+      <div class="cr red"><span>التأمينات (11%)</span><span>- ${fmt(r.ins)} ج</span></div>
+      <div class="cr red"><span>ضريبة الدخل</span><span>- ${fmt(r.tax)} ج</span></div>
+      ${r.loanDed>0?`<div class="cr org"><span>قسط السلفة</span><span>- ${fmt(r.loanDed)} ج</span></div>`:''}
+      ${r.bonAmt>0?`<div class="cr grn"><span>المكافآت</span><span>+ ${fmt(r.bonAmt)} ج</span></div>`:''}
+      <div class="cr tot"><span>صافي الراتب</span><span style="color:#27ae60">${fmt(r.net)} ج</span></div>
+    </div>
+    <div class="alrt ai mt8">تكلفة المدرسة (19% تأمين): <strong>${fmt(empIns)} ج</strong> | إجمالي التكلفة: <strong>${fmt(r.grossAfterAbs+empIns)} ج</strong></div>
+  `;
+}
+
+function renderAllPay(){
+  let tG=0,tA=0,tL=0,tI=0,tT=0,tB=0,tN=0;
+  const tm={employee:'موظف',teacher:'مدرس',hourly:'بالحصة'};
+  const tmc={employee:'be',teacher:'bt',hourly:'bh'};
+  document.getElementById('pay-all-body').innerHTML=emps.map(e=>{
+    const r=fullCalc(e);
+    tG+=r.gross;tA+=r.absDed;tL+=r.loanDed;tI+=r.ins;tT+=r.tax;tB+=r.bonAmt;tN+=r.net;
+    return`<tr>
+      <td><strong>${e.name}</strong><small>${e.dept}</small></td>
+      <td>${fmt(r.gross)}</td>
+      <td style="color:${r.absDed?'#c0392b':'#888'}">${r.absDed?fmt(r.absDed):'—'}</td>
+      <td style="color:${r.loanDed?'#e67e22':'#888'}">${r.loanDed?fmt(r.loanDed):'—'}</td>
+      <td style="color:#c0392b">${fmt(r.ins)}</td>
+      <td style="color:#c0392b">${fmt(r.tax)}</td>
+      <td style="color:#27ae60">${r.bonAmt?fmt(r.bonAmt):'—'}</td>
+      <td style="color:#27ae60;font-weight:700">${fmt(r.net)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('pay-all-foot').innerHTML=`
+    <tr>
+      <td>الإجمالي</td>
+      <td>${fmt(tG)}</td>
+      <td style="color:#c0392b">${tA?fmt(tA):'—'}</td>
+      <td style="color:#e67e22">${tL?fmt(tL):'—'}</td>
+      <td style="color:#c0392b">${fmt(tI)}</td>
+      <td style="color:#c0392b">${fmt(tT)}</td>
+      <td style="color:#27ae60">${tB?fmt(tB):'—'}</td>
+      <td style="color:#27ae60;font-weight:700">${fmt(tN)}</td>
+    </tr>`;
+}
+
+function addAbs(){
+  const empId=document.getElementById('abemp').value;
+  const type=document.getElementById('abtype').value;
+  const days=parseInt(document.getElementById('abdays').value)||1;
+  const date=document.getElementById('abdate').value;
+  const note=document.getElementById('abnote').value;
+  if(!empId){showMsg('abs-msg','اختر الموظف أولاً','ar');return;}
+  absences.push({id:Date.now(),empId,type,days,date,note});
+  showMsg('abs-msg','تم تسجيل الغياب بنجاح','as');
+  document.getElementById('abdays').value='';
+  document.getElementById('abnote').value='';
+  renderAbsTable();
+}
+
+function renderAbsTable(){
+  const tl={absent:'غياب',excuse:'اعتذار',sick:'مرضية',annual:'سنوية',late:'تأخر'};
+  const tc={absent:'ba',excuse:'ba',sick:'baw',annual:'bp2',late:'bg2'};
+  document.getElementById('abs-table').innerHTML=absences.length?absences.map(a=>{
+    const e=emps.find(x=>x.id===a.empId);
+    const daily=e?getGross(e)/(e.wdays||26):0;
+    let ded=0;
+    if(a.type==='absent'||a.type==='excuse') ded=daily*(a.days||1);
+    else if(a.type==='sick') ded=daily*(a.days||1)*.25;
+    else if(a.type==='late') ded=daily*(a.days||1)*.5;
+    return`<tr>
+      <td><strong>${e?e.name:'—'}</strong></td>
+      <td><span class="badge ${tc[a.type]}">${tl[a.type]}</span></td>
+      <td>${a.days} يوم</td>
+      <td style="color:${ded?'#c0392b':'#27ae60'};font-weight:600">${ded?fmt(ded)+' ج':'بدون خصم'}</td>
+      <td>${a.date}</td>
+      <td>${a.note||'—'}</td>
+      <td><button class="bd" onclick="delAbs(${a.id})">حذف</button></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="7" class="nd">لا توجد غيابات مسجلة</td></tr>`;
+}
+
+function delAbs(id){absences=absences.filter(a=>a.id!==id);renderAbsTable();}
+
+function swLoan(tab,el){
+  document.querySelectorAll('#pg-loan .tib').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('loan-add-sec').style.display=tab==='add'?'block':'none';
+  document.getElementById('loan-list-sec').style.display=tab==='list'?'block':'none';
+  if(tab==='list') renderLoanList();
+}
+
+function addLoan(){
+  const empId=document.getElementById('lnemp').value;
+  const amt=parseFloat(document.getElementById('lnamt').value)||0;
+  const mos=parseInt(document.getElementById('lnmos').value)||3;
+  const date=document.getElementById('lndate').value;
+  const note=document.getElementById('lnnote').value;
+  if(!empId||!amt){showMsg('loan-msg','اختر الموظف وأدخل قيمة السلفة','ar');return;}
+  loans.push({id:Date.now(),empId,amount:amt,remaining:amt,months:mos,monthly:Math.ceil(amt/mos),date,note,paid:0});
+  showMsg('loan-msg','تم منح السلفة وستُخصم أقساطها شهرياً','as');
+  document.getElementById('lnamt').value='';
+  document.getElementById('lnnote').value='';
+  fillSelects();
+}
+
+function renderLoanList(){
+  const f=document.getElementById('loan-filter').value;
+  const list=f==='all'?loans:loans.filter(l=>l.empId===f);
+  document.getElementById('loan-table').innerHTML=list.length?list.map(l=>{
+    const e=emps.find(x=>x.id===l.empId);
+    const pct=Math.round((l.paid/l.amount)*100);
+    const done=l.remaining<=0;
+    return`<tr>
+      <td><strong>${e?e.name:'—'}</strong></td>
+      <td>${fmt(l.amount)} ج</td>
+      <td>${fmt(l.paid)} ج</td>
+      <td style="color:${done?'#27ae60':'#e67e22'};font-weight:600">${done?'مسدد بالكامل':fmt(l.remaining)+' ج'}</td>
+      <td>${done?'—':fmt(l.monthly)+' ج/شهر'}</td>
+      <td><span class="badge ${done?'bp2':'bh'}">${done?'مكتمل':'جاري'}</span></td>
+      <td>${!done?`<button class="bd" onclick="payLoan(${l.id})">تسجيل دفعة</button>`:''}</td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="7" class="nd">لا توجد سلف مسجلة</td></tr>`;
+}
+
+function payLoan(id){
+  const l=loans.find(x=>x.id===id);if(!l)return;
+  const pay=Math.min(l.monthly,l.remaining);
+  l.paid+=pay;l.remaining=Math.max(0,l.remaining-pay);
+  renderLoanList();
+}
+
+function addBonus(){
+  const empId=document.getElementById('bnemp').value;
+  const type=document.getElementById('bntype').value;
+  const amt=parseFloat(document.getElementById('bnamt').value)||0;
+  const date=document.getElementById('bndate').value;
+  const note=document.getElementById('bnnote').value;
+  if(!empId||!amt){showMsg('bon-msg','اختر الموظف وأدخل قيمة المكافأة','ar');return;}
+  bonuses.push({id:Date.now(),empId,type,amount:amt,date,note});
+  showMsg('bon-msg','تم إضافة المكافأة بنجاح','as');
+  document.getElementById('bnamt').value='';
+  document.getElementById('bnnote').value='';
+  renderBonTable();
+}
+
+function renderBonTable(){
+  const tl={performance:'أداء',annual:'سنوية',ramadan:'رمضان',exceptional:'استثنائية',month:'شهر إضافي'};
+  document.getElementById('bon-table').innerHTML=bonuses.length?bonuses.map(b=>{
+    const e=emps.find(x=>x.id===b.empId);
+    return`<tr>
+      <td><strong>${e?e.name:'—'}</strong></td>
+      <td><span class="badge bt">${tl[b.type]}</span></td>
+      <td style="color:#27ae60;font-weight:700">${fmt(b.amount)} ج</td>
+      <td>${b.date}</td>
+      <td>${b.note||'—'}</td>
+      <td><button class="bd" onclick="delBon(${b.id})">حذف</button></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="6" class="nd">لا توجد مكافآت مسجلة</td></tr>`;
+}
+
+function delBon(id){bonuses=bonuses.filter(b=>b.id!==id);renderBonTable();}
+
+function renderRep(){
+  let tG=0,tA=0,tI=0,tT=0,tN=0;
+  emps.forEach(e=>{const r=fullCalc(e);tG+=r.gross;tA+=r.absDed;tI+=r.ins;tT+=r.tax;tN+=r.net;});
+  const tEmpIns=emps.reduce((s,e)=>{const r=fullCalc(e);return s+Math.min(r.grossAfterAbs,INS_CAP)*EMP_INS;},0);
+  const totLoans=loans.reduce((s,l)=>s+l.remaining,0);
+  document.getElementById('rep-stats').innerHTML=`
+    <div class="stat"><div class="lbl">إجمالي الرواتب</div><div class="val">${fmt(tG)}</div><div class="sub">ج / شهر</div></div>
+    <div class="stat"><div class="lbl">خصم الغيابات</div><div class="val">${fmt(tA)}</div><div class="sub">هذا الشهر</div></div>
+    <div class="stat"><div class="lbl">سلف متبقية</div><div class="val">${fmt(totLoans)}</div><div class="sub">إجمالي</div></div>
+    <div class="stat"><div class="lbl">صافي الرواتب</div><div class="val">${fmt(tN)}</div><div class="sub">بعد كل الاستقطاعات</div></div>
+  `;
+  document.getElementById('rep-deduct').innerHTML=`
+    <div class="cr"><span>إجمالي الرواتب</span><span>${fmt(tG)} ج</span></div>
+    <div class="cr red"><span>خصم الغيابات</span><span>- ${fmt(tA)} ج</span></div>
+    <div class="cr red"><span>تأمينات الموظفين (11%)</span><span>- ${fmt(tI)} ج</span></div>
+    <div class="cr red"><span>ضريبة الدخل</span><span>- ${fmt(tT)} ج</span></div>
+    <div class="cr tot"><span>صافي الرواتب</span><span style="color:#27ae60">${fmt(tN)} ج</span></div>
+    <div class="cr" style="margin-top:8px;padding-top:8px;border-top:1px solid #d0e4f0"><span>حصة المدرسة (19%)</span><span>${fmt(tEmpIns)} ج</span></div>
+    <div class="cr tot"><span>إجمالي تكلفة المدرسة</span><span>${fmt(tG+tEmpIns)} ج</span></div>
+  `;
+  const ec=emps.filter(e=>e.type==='employee').length;
+  const tc=emps.filter(e=>e.type==='teacher').length;
+  const hc=emps.filter(e=>e.type==='hourly').length;
+  const tot=emps.length||1;
+  document.getElementById('rep-dist').innerHTML=[
+    ['موظفون إداريون',ec,ec/tot],
+    ['مدرسون (راتب ثابت)',tc,tc/tot],
+    ['مدرسون بالحصة',hc,hc/tot],
+  ].map(([l,n,p])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${l}</span><span>${n} (${Math.round(p*100)}%)</span></div>
+      <div class="prog"><div class="prog-fill" style="width:${Math.round(p*100)}%"></div></div>
+    </div>
+  `).join('');
+  const actLoans=loans.filter(l=>l.remaining>0);
+  document.getElementById('rep-loans').innerHTML=actLoans.length?actLoans.map(l=>{
+    const e=emps.find(x=>x.id===l.empId);
+    const pct=Math.round((l.paid/l.amount)*100);
+    return`<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span><strong>${e?e.name:'—'}</strong></span>
+        <span style="color:#e67e22">${fmt(l.remaining)} ج متبقي من ${fmt(l.amount)} ج</span>
+      </div>
+      <div class="prog"><div class="prog-fill org" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join(''):'<div class="nd">لا توجد سلف نشطة</div>';
+  const now=new Date();
+  const mAbs=absences.filter(a=>new Date(a.date).getMonth()===now.getMonth());
+  const tl2={absent:'غياب',excuse:'اعتذار',sick:'مرضية',annual:'سنوية',late:'تأخر'};
+  document.getElementById('rep-abs').innerHTML=mAbs.length?mAbs.map(a=>{
+    const e=emps.find(x=>x.id===a.empId);
+    return`<div class="cr"><span><strong>${e?e.name:'—'}</strong> — ${tl2[a.type]}</span><span>${a.days} يوم | ${a.date}</span></div>`;
+  }).join(''):'<div class="nd">لا توجد غيابات هذا الشهر</div>';
+}
+
+fillSelects();
+renderDash();
+</script>
+</body>
+</html>
