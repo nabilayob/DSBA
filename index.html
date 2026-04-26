@@ -470,14 +470,12 @@ import {
 // ║  ضع هنا إعدادات Firebase الخاصة بك              ║
 // ╚══════════════════════════════════════════════════╝
 const firebaseConfig = {
-  // انسخ والصق firebaseConfig الخاص بك هنا
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyA6mbOjvl9_c5QeHZatdUV7qdt5mBQjQ-g",
+  authDomain: "dsba-638cc.firebaseapp.com",
+  projectId: "dsba-638cc",
+  storageBucket: "dsba-638cc.firebasestorage.app",
+  messagingSenderId: "252093790493",
+  appId: "1:252093790493:web:2b5800692697d3a40289f4"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -487,7 +485,7 @@ const db  = getDatabase(app);
 const INS=0.11, EMP_INS=0.19, INS_CAP=9400;
 let emps=[], absences=[], loans=[], bonuses=[];
 
-// ─── مؤشر التحميل ───────────────────────────────
+// ─── مؤشر الاتصال الأولي ────────────────────────
 function setLoading(on){
   let el=document.getElementById('fb-loading');
   if(!el){
@@ -495,11 +493,28 @@ function setLoading(on){
     el.id='fb-loading';
     el.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);'+
       'background:#1a5276;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;'+
-      'z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:opacity .3s';
+      'z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:opacity .4s;pointer-events:none';
     document.body.appendChild(el);
   }
-  el.textContent='جاري المزامنة مع قاعدة البيانات…';
+  el.textContent='جاري الاتصال بقاعدة البيانات…';
   el.style.opacity=on?'1':'0';
+}
+
+// ─── وميض الحفظ السريع ──────────────────────────
+function flashSaved(){
+  let el=document.getElementById('fb-saved');
+  if(!el){
+    el=document.createElement('div');
+    el.id='fb-saved';
+    el.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);'+
+      'background:#27ae60;color:#fff;padding:7px 18px;border-radius:20px;font-size:13px;'+
+      'z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .4s';
+    document.body.appendChild(el);
+  }
+  el.textContent='✓ تم الحفظ';
+  el.style.opacity='1';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.opacity='0',1200);
 }
 
 // ─── مزامنة Firebase → local arrays + إعادة رسم ─
@@ -540,34 +555,38 @@ function listenAll(){
   });
 }
 
-// ─── دوال الكتابة إلى Firebase ──────────────────
-window.fbAddEmp = async function(empObj){
-  // نحفظ الموظف بـ id كـ key حتى يكون مرجعاً ثابتاً
-  await set(ref(db,`emps/${empObj.id}`), empObj);
+// ─── دوال الكتابة إلى Firebase (fire-and-forget) ─
+// لا نستخدم await حتى لا يتجمد الـ UI — onValue يحدّث تلقائياً
+window.fbAddEmp = function(empObj){
+  set(ref(db,`emps/${empObj.id}`), empObj).catch(e=>console.error('fbAddEmp',e));
+  return Promise.resolve();
 };
-window.fbDelEmp = async function(key){
-  await remove(ref(db,`emps/${key}`));
+window.fbDelEmp = function(key){
+  remove(ref(db,`emps/${key}`)).catch(e=>console.error('fbDelEmp',e));
 };
-window.fbAddAbsence = async function(obj){
+window.fbAddAbsence = function(obj){
   const {_key,...data}=obj;
-  await push(ref(db,'absences'), data);
+  push(ref(db,'absences'), data).catch(e=>console.error('fbAddAbsence',e));
+  return Promise.resolve();
 };
-window.fbDelAbsence = async function(key){
-  await remove(ref(db,`absences/${key}`));
+window.fbDelAbsence = function(key){
+  remove(ref(db,`absences/${key}`)).catch(e=>console.error('fbDelAbsence',e));
 };
-window.fbAddLoan = async function(obj){
+window.fbAddLoan = function(obj){
   const {_key,...data}=obj;
-  await push(ref(db,'loans'), data);
+  push(ref(db,'loans'), data).catch(e=>console.error('fbAddLoan',e));
+  return Promise.resolve();
 };
-window.fbUpdateLoan = async function(key, changes){
-  await update(ref(db,`loans/${key}`), changes);
+window.fbUpdateLoan = function(key, changes){
+  update(ref(db,`loans/${key}`), changes).catch(e=>console.error('fbUpdateLoan',e));
 };
-window.fbAddBonus = async function(obj){
+window.fbAddBonus = function(obj){
   const {_key,...data}=obj;
-  await push(ref(db,'bonuses'), data);
+  push(ref(db,'bonuses'), data).catch(e=>console.error('fbAddBonus',e));
+  return Promise.resolve();
 };
-window.fbDelBonus = async function(key){
-  await remove(ref(db,`bonuses/${key}`));
+window.fbDelBonus = function(key){
+  remove(ref(db,`bonuses/${key}`)).catch(e=>console.error('fbDelBonus',e));
 };
 
 // ─── بدء الاستماع للبيانات ───────────────────────
@@ -707,11 +726,9 @@ function addEmp(){
   const dt=document.getElementById('adt').value;
   const wd=parseInt(document.getElementById('awdays').value)||26;
   if(!n||!i||!s){showMsg('add-msg','يرجى ملء الاسم والرقم والراتب','ar');return;}
-  fbAddEmp({id:i,name:n,type:t,dept:d,salary:s,housing:ho,transport:tr2,other:ot,date:dt,wdays:wd,hours:h})
-    .then(()=>{
-      showMsg('add-msg','تم إضافة الموظف وحفظه في قاعدة البيانات','as');
-      ['an','ai','ad','as2','ah','aho','atr','aot','adt'].forEach(x=>document.getElementById(x).value='');
-    }).catch(()=>showMsg('add-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
+  fbAddEmp({id:i,name:n,type:t,dept:d,salary:s,housing:ho,transport:tr2,other:ot,date:dt,wdays:wd,hours:h});
+  showMsg('add-msg','تم إضافة الموظف وحفظه في قاعدة البيانات','as');
+  ['an','ai','ad','as2','ah','aho','atr','aot','adt'].forEach(x=>document.getElementById(x).value='');
 }
 
 function showMsg(id,txt,cls){
@@ -795,12 +812,10 @@ function addAbs(){
   const date=document.getElementById('abdate').value;
   const note=document.getElementById('abnote').value;
   if(!empId){showMsg('abs-msg','اختر الموظف أولاً','ar');return;}
-  fbAddAbsence({empId,type,days,date,note})
-    .then(()=>{
-      showMsg('abs-msg','تم تسجيل الغياب بنجاح','as');
-      document.getElementById('abdays').value='';
-      document.getElementById('abnote').value='';
-    }).catch(()=>showMsg('abs-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
+  fbAddAbsence({empId,type,days,date,note});
+  showMsg('abs-msg','تم تسجيل الغياب بنجاح','as');
+  document.getElementById('abdays').value='';
+  document.getElementById('abnote').value='';
 }
 
 function renderAbsTable(){
@@ -842,12 +857,10 @@ function addLoan(){
   const date=document.getElementById('lndate').value;
   const note=document.getElementById('lnnote').value;
   if(!empId||!amt){showMsg('loan-msg','اختر الموظف وأدخل قيمة السلفة','ar');return;}
-  fbAddLoan({empId,amount:amt,remaining:amt,months:mos,monthly:Math.ceil(amt/mos),date,note,paid:0})
-    .then(()=>{
-      showMsg('loan-msg','تم منح السلفة وستُخصم أقساطها شهرياً','as');
-      document.getElementById('lnamt').value='';
-      document.getElementById('lnnote').value='';
-    }).catch(()=>showMsg('loan-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
+  fbAddLoan({empId,amount:amt,remaining:amt,months:mos,monthly:Math.ceil(amt/mos),date,note,paid:0});
+  showMsg('loan-msg','تم منح السلفة وستُخصم أقساطها شهرياً','as');
+  document.getElementById('lnamt').value='';
+  document.getElementById('lnnote').value='';
 }
 
 function renderLoanList(){
@@ -882,12 +895,10 @@ function addBonus(){
   const date=document.getElementById('bndate').value;
   const note=document.getElementById('bnnote').value;
   if(!empId||!amt){showMsg('bon-msg','اختر الموظف وأدخل قيمة المكافأة','ar');return;}
-  fbAddBonus({empId,type,amount:amt,date,note})
-    .then(()=>{
-      showMsg('bon-msg','تم إضافة المكافأة بنجاح','as');
-      document.getElementById('bnamt').value='';
-      document.getElementById('bnnote').value='';
-    }).catch(()=>showMsg('bon-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
+  fbAddBonus({empId,type,amount:amt,date,note});
+  showMsg('bon-msg','تم إضافة المكافأة بنجاح','as');
+  document.getElementById('bnamt').value='';
+  document.getElementById('bnnote').value='';
 }
 
 function renderBonTable(){
