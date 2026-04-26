@@ -459,15 +459,119 @@
   </div>
 </div>
 
-<script>
+<!-- ======= FIREBASE SDK ======= -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, set, push, remove, onValue, update
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ╔══════════════════════════════════════════════════╗
+// ║  ضع هنا إعدادات Firebase الخاصة بك              ║
+// ╚══════════════════════════════════════════════════╝
+const firebaseConfig = {
+  // انسخ والصق firebaseConfig الخاص بك هنا
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ─── حالة البيانات المحلية ───────────────────────
 const INS=0.11, EMP_INS=0.19, INS_CAP=9400;
-let emps=[
-  {id:'EMP-001',name:'أحمد محمد علي',type:'employee',dept:'الإدارة',salary:8000,housing:1500,transport:500,other:200,date:'2020-01-01',wdays:26,hours:0},
-  {id:'EMP-002',name:'سارة أحمد حسن',type:'teacher',dept:'الرياضيات',salary:6000,housing:1000,transport:400,other:0,date:'2021-03-15',wdays:26,hours:0},
-  {id:'EMP-003',name:'محمود إبراهيم',type:'hourly',dept:'الفيزياء',salary:150,housing:0,transport:0,other:0,date:'2022-09-01',wdays:26,hours:40},
-  {id:'EMP-004',name:'فاطمة عبدالله',type:'teacher',dept:'اللغة العربية',salary:5500,housing:800,transport:300,other:0,date:'2019-08-01',wdays:26,hours:0},
-];
-let absences=[],loans=[],bonuses=[];
+let emps=[], absences=[], loans=[], bonuses=[];
+
+// ─── مؤشر التحميل ───────────────────────────────
+function setLoading(on){
+  let el=document.getElementById('fb-loading');
+  if(!el){
+    el=document.createElement('div');
+    el.id='fb-loading';
+    el.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);'+
+      'background:#1a5276;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;'+
+      'z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:opacity .3s';
+    document.body.appendChild(el);
+  }
+  el.textContent='جاري المزامنة مع قاعدة البيانات…';
+  el.style.opacity=on?'1':'0';
+}
+
+// ─── مزامنة Firebase → local arrays + إعادة رسم ─
+function listenAll(){
+  setLoading(true);
+  let loaded={emps:false,absences:false,loans:false,bonuses:false};
+  function checkDone(){
+    if(Object.values(loaded).every(Boolean)){
+      setLoading(false);
+      fillSelects();
+      renderDash();
+    }
+  }
+
+  onValue(ref(db,'emps'), snap=>{
+    emps=[];
+    snap.forEach(child=>emps.push({_key:child.key,...child.val()}));
+    loaded.emps=true; checkDone();
+    fillSelects(); renderDash(); renderEmp();
+  });
+  onValue(ref(db,'absences'), snap=>{
+    absences=[];
+    snap.forEach(child=>absences.push({_key:child.key,...child.val()}));
+    loaded.absences=true; checkDone();
+    renderAbsTable(); renderDash();
+  });
+  onValue(ref(db,'loans'), snap=>{
+    loans=[];
+    snap.forEach(child=>loans.push({_key:child.key,...child.val()}));
+    loaded.loans=true; checkDone();
+    renderLoanList(); renderDash();
+  });
+  onValue(ref(db,'bonuses'), snap=>{
+    bonuses=[];
+    snap.forEach(child=>bonuses.push({_key:child.key,...child.val()}));
+    loaded.bonuses=true; checkDone();
+    renderBonTable(); renderDash();
+  });
+}
+
+// ─── دوال الكتابة إلى Firebase ──────────────────
+window.fbAddEmp = async function(empObj){
+  // نحفظ الموظف بـ id كـ key حتى يكون مرجعاً ثابتاً
+  await set(ref(db,`emps/${empObj.id}`), empObj);
+};
+window.fbDelEmp = async function(key){
+  await remove(ref(db,`emps/${key}`));
+};
+window.fbAddAbsence = async function(obj){
+  const {_key,...data}=obj;
+  await push(ref(db,'absences'), data);
+};
+window.fbDelAbsence = async function(key){
+  await remove(ref(db,`absences/${key}`));
+};
+window.fbAddLoan = async function(obj){
+  const {_key,...data}=obj;
+  await push(ref(db,'loans'), data);
+};
+window.fbUpdateLoan = async function(key, changes){
+  await update(ref(db,`loans/${key}`), changes);
+};
+window.fbAddBonus = async function(obj){
+  const {_key,...data}=obj;
+  await push(ref(db,'bonuses'), data);
+};
+window.fbDelBonus = async function(key){
+  await remove(ref(db,`bonuses/${key}`));
+};
+
+// ─── بدء الاستماع للبيانات ───────────────────────
+listenAll();
 
 function fmt(n){return Math.round(n).toLocaleString('ar-EG');}
 function today(){return new Date().toISOString().split('T')[0];}
@@ -582,7 +686,7 @@ function renderEmp(){
   }).join(''):`<tr><td colspan="7" class="nd">لا يوجد موظفون</td></tr>`;
 }
 
-function delEmp(id){if(confirm('حذف هذا الموظف؟')){emps=emps.filter(e=>e.id!==id);renderEmp();}}
+function delEmp(id){if(confirm('حذف هذا الموظف؟')){fbDelEmp(id);}}
 
 function toggleAdd(){
   const t=document.getElementById('at').value;
@@ -603,9 +707,11 @@ function addEmp(){
   const dt=document.getElementById('adt').value;
   const wd=parseInt(document.getElementById('awdays').value)||26;
   if(!n||!i||!s){showMsg('add-msg','يرجى ملء الاسم والرقم والراتب','ar');return;}
-  emps.push({id:i,name:n,type:t,dept:d,salary:s,housing:ho,transport:tr2,other:ot,date:dt,wdays:wd,hours:h});
-  showMsg('add-msg','تم إضافة الموظف بنجاح','as');
-  ['an','ai','ad','as2','ah','aho','atr','aot','adt'].forEach(x=>document.getElementById(x).value='');
+  fbAddEmp({id:i,name:n,type:t,dept:d,salary:s,housing:ho,transport:tr2,other:ot,date:dt,wdays:wd,hours:h})
+    .then(()=>{
+      showMsg('add-msg','تم إضافة الموظف وحفظه في قاعدة البيانات','as');
+      ['an','ai','ad','as2','ah','aho','atr','aot','adt'].forEach(x=>document.getElementById(x).value='');
+    }).catch(()=>showMsg('add-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
 }
 
 function showMsg(id,txt,cls){
@@ -689,11 +795,12 @@ function addAbs(){
   const date=document.getElementById('abdate').value;
   const note=document.getElementById('abnote').value;
   if(!empId){showMsg('abs-msg','اختر الموظف أولاً','ar');return;}
-  absences.push({id:Date.now(),empId,type,days,date,note});
-  showMsg('abs-msg','تم تسجيل الغياب بنجاح','as');
-  document.getElementById('abdays').value='';
-  document.getElementById('abnote').value='';
-  renderAbsTable();
+  fbAddAbsence({empId,type,days,date,note})
+    .then(()=>{
+      showMsg('abs-msg','تم تسجيل الغياب بنجاح','as');
+      document.getElementById('abdays').value='';
+      document.getElementById('abnote').value='';
+    }).catch(()=>showMsg('abs-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
 }
 
 function renderAbsTable(){
@@ -713,12 +820,12 @@ function renderAbsTable(){
       <td style="color:${ded?'#c0392b':'#27ae60'};font-weight:600">${ded?fmt(ded)+' ج':'بدون خصم'}</td>
       <td>${a.date}</td>
       <td>${a.note||'—'}</td>
-      <td><button class="bd" onclick="delAbs(${a.id})">حذف</button></td>
+      <td><button class="bd" onclick="delAbs('${a._key}')">حذف</button></td>
     </tr>`;
   }).join(''):`<tr><td colspan="7" class="nd">لا توجد غيابات مسجلة</td></tr>`;
 }
 
-function delAbs(id){absences=absences.filter(a=>a.id!==id);renderAbsTable();}
+function delAbs(key){fbDelAbsence(key);}
 
 function swLoan(tab,el){
   document.querySelectorAll('#pg-loan .tib').forEach(t=>t.classList.remove('on'));
@@ -735,11 +842,12 @@ function addLoan(){
   const date=document.getElementById('lndate').value;
   const note=document.getElementById('lnnote').value;
   if(!empId||!amt){showMsg('loan-msg','اختر الموظف وأدخل قيمة السلفة','ar');return;}
-  loans.push({id:Date.now(),empId,amount:amt,remaining:amt,months:mos,monthly:Math.ceil(amt/mos),date,note,paid:0});
-  showMsg('loan-msg','تم منح السلفة وستُخصم أقساطها شهرياً','as');
-  document.getElementById('lnamt').value='';
-  document.getElementById('lnnote').value='';
-  fillSelects();
+  fbAddLoan({empId,amount:amt,remaining:amt,months:mos,monthly:Math.ceil(amt/mos),date,note,paid:0})
+    .then(()=>{
+      showMsg('loan-msg','تم منح السلفة وستُخصم أقساطها شهرياً','as');
+      document.getElementById('lnamt').value='';
+      document.getElementById('lnnote').value='';
+    }).catch(()=>showMsg('loan-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
 }
 
 function renderLoanList(){
@@ -756,16 +864,15 @@ function renderLoanList(){
       <td style="color:${done?'#27ae60':'#e67e22'};font-weight:600">${done?'مسدد بالكامل':fmt(l.remaining)+' ج'}</td>
       <td>${done?'—':fmt(l.monthly)+' ج/شهر'}</td>
       <td><span class="badge ${done?'bp2':'bh'}">${done?'مكتمل':'جاري'}</span></td>
-      <td>${!done?`<button class="bd" onclick="payLoan(${l.id})">تسجيل دفعة</button>`:''}</td>
+      <td>${!done?`<button class="bd" onclick="payLoan('${l._key}')">تسجيل دفعة</button>`:''}</td>
     </tr>`;
   }).join(''):`<tr><td colspan="7" class="nd">لا توجد سلف مسجلة</td></tr>`;
 }
 
-function payLoan(id){
-  const l=loans.find(x=>x.id===id);if(!l)return;
+function payLoan(key){
+  const l=loans.find(x=>x._key===key);if(!l)return;
   const pay=Math.min(l.monthly,l.remaining);
-  l.paid+=pay;l.remaining=Math.max(0,l.remaining-pay);
-  renderLoanList();
+  fbUpdateLoan(key,{paid:l.paid+pay,remaining:Math.max(0,l.remaining-pay)});
 }
 
 function addBonus(){
@@ -775,11 +882,12 @@ function addBonus(){
   const date=document.getElementById('bndate').value;
   const note=document.getElementById('bnnote').value;
   if(!empId||!amt){showMsg('bon-msg','اختر الموظف وأدخل قيمة المكافأة','ar');return;}
-  bonuses.push({id:Date.now(),empId,type,amount:amt,date,note});
-  showMsg('bon-msg','تم إضافة المكافأة بنجاح','as');
-  document.getElementById('bnamt').value='';
-  document.getElementById('bnnote').value='';
-  renderBonTable();
+  fbAddBonus({empId,type,amount:amt,date,note})
+    .then(()=>{
+      showMsg('bon-msg','تم إضافة المكافأة بنجاح','as');
+      document.getElementById('bnamt').value='';
+      document.getElementById('bnnote').value='';
+    }).catch(()=>showMsg('bon-msg','خطأ في الاتصال بقاعدة البيانات','ar'));
 }
 
 function renderBonTable(){
@@ -792,12 +900,12 @@ function renderBonTable(){
       <td style="color:#27ae60;font-weight:700">${fmt(b.amount)} ج</td>
       <td>${b.date}</td>
       <td>${b.note||'—'}</td>
-      <td><button class="bd" onclick="delBon(${b.id})">حذف</button></td>
+      <td><button class="bd" onclick="delBon('${b._key}')">حذف</button></td>
     </tr>`;
   }).join(''):`<tr><td colspan="6" class="nd">لا توجد مكافآت مسجلة</td></tr>`;
 }
 
-function delBon(id){bonuses=bonuses.filter(b=>b.id!==id);renderBonTable();}
+function delBon(key){fbDelBonus(key);}
 
 function renderRep(){
   let tG=0,tA=0,tI=0,tT=0,tN=0;
@@ -854,8 +962,15 @@ function renderRep(){
   }).join(''):'<div class="nd">لا توجد غيابات هذا الشهر</div>';
 }
 
-fillSelects();
-renderDash();
+// Firebase listeners (set up above in the module) handle fillSelects() and renderDash() on load.
+// Expose UI functions that are called from onclick= attributes to window scope:
+window.go=go; window.renderEmp=renderEmp; window.delEmp=delEmp;
+window.toggleAdd=toggleAdd; window.addEmp=addEmp;
+window.swPay=swPay; window.calcPay=calcPay;
+window.addAbs=addAbs; window.renderAbsTable=renderAbsTable; window.delAbs=delAbs;
+window.swLoan=swLoan; window.addLoan=addLoan; window.renderLoanList=renderLoanList; window.payLoan=payLoan;
+window.addBonus=addBonus; window.renderBonTable=renderBonTable; window.delBon=delBon;
+window.renderRep=renderRep;
 </script>
 </body>
 </html>
